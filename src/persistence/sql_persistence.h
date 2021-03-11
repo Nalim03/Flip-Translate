@@ -13,6 +13,8 @@
 using RowId = long long;
 using OptionalRowId = std::optional<RowId>;
 
+using LanguageWordPair = QPair<QLocale::Language, QString>;
+
 struct CardRecord
 {
     RowId id;
@@ -52,6 +54,9 @@ public:
     const QMap<RowId, Deck>& getDecks() const;
     const QVector<CardRecord>& getCardsOfDeck(RowId deckId) const;
     OptionalRowId getDeckIdByName(const QString& name) const;
+
+    void fetchWord(RowId wordId, LanguageWordPair& result);
+    void fetchSynonyms(RowId wordId, QVector<LanguageWordPair>& synonyms);
 
     RowId insertWord(QLocale::Language, const QString& word);
     RowId insertSynonym(RowId wordId, RowId synonymWordId);

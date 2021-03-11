@@ -55,6 +55,29 @@ const QVector<CardRecord>& SQLPersistence::getCardsOfDeck(RowId deckId) const
     return deck->cards;
 }
 
+void SQLPersistence::fetchWord(RowId wordId, LanguageWordPair& result)
+{
+    SQLite::Statement statement(db, "SELECT language_id, word FROM words WHERE id = ?");
+    statement.bind(1, wordId);
+    if(!statement.executeStep())
+        throw std::runtime_error("Tried to fetch word #" + std::to_string(wordId) + " which is not present in database!");
+
+    result.first = static_cast<QLocale::Language>(statement.getColumn(0).getInt());
+    result.second = QString::fromUtf8(statement.getColumn(0).getString());
+}
+
+void SQLPersistence::fetchSynonyms(RowId wordId, QVector<LanguageWordPair>& result)
+{
+    SQLite::Statement statement(db, "SELECT synonym_word_id FROM synonyms WHERE word_id = ?");
+    statement.bind(1, wordId);
+    while(statement.executeStep())
+    {
+        LanguageWordPair synonym;
+        fetchWord(statement.getColumn(0), synonym);
+        result.push_back(synonym);
+    }
+}
+
 RowId SQLPersistence::insertWord(QLocale::Language language, const QString& word)
 {
     QByteArray wordUtf8 = word.toUtf8();
