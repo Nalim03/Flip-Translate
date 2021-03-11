@@ -15,7 +15,11 @@ endif()
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
+set(SQLITECPP_RUN_CPPLINT OFF)
+add_subdirectory(thirdparty/SQLiteCpp)
+
 file(GLOB_RECURSE SRCS "src/*.cpp" "src/*.h")
 add_executable(FlipTranslate ${SRCS})
 target_include_directories(FlipTranslate PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(FlipTranslate Qt6::Widgets)
+target_include_directories(FlipTranslate PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty/SQLiteCpp/include)
+target_link_libraries(FlipTranslate Qt6::Widgets SQLiteCpp sqlite3)
