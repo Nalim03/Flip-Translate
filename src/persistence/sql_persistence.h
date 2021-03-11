@@ -12,13 +12,6 @@
 using RowId = long long;
 using OptionalRowId = std::optional<RowId>;
 
-struct WordRecord
-{
-    RowId id;
-    QLocale::Language language;
-    QString word;
-};
-
 struct CardRecord
 {
     RowId id;
@@ -45,7 +38,7 @@ enum class AttemptResult : qint8
 struct AttemptRecord
 {
     RowId id;
-    quint64 time;
+    qint64 time;
     RowId cardId;
     AttemptResult result;
 };
@@ -61,7 +54,9 @@ public:
 
     RowId insertWord(QLocale::Language, const QString& word);
     RowId insertSynonym(RowId wordId, RowId synonymWordId);
+    RowId insertCard(RowId deckId, RowId sourceWordId, RowId targetWordId);
     RowId insertDeck(const QString& name);
+    RowId insertAttempt(qint64 time, RowId cardId, AttemptResult result);
 
 private:
     SQLite::Database db;

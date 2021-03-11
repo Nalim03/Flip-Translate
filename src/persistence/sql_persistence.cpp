@@ -1,4 +1,5 @@
 #include "sql_persistence.h"
+#include <sstream>
 
 SQLPersistence::SQLPersistence(const char* dbFilename)
     : db(dbFilename, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE)
@@ -9,7 +10,7 @@ SQLPersistence::SQLPersistence(const char* dbFilename)
     db.exec("CREATE TABLE IF NOT EXISTS decks (id INTEGER PRIMARY KEY, name TEXT)");
     db.exec("CREATE TABLE IF NOT EXISTS cards (id INTEGER PRIMARY KEY, deck_id INTEGER, source_word_id INTEGER, target_word_id INTEGER)");
 
-    db.exec("CREATE TABLE IF NOT EXISTS attempts (id INTEGER PRIMARY KEY, time UNSIGNED BIG INT, card_id INTEGER, result INT8)");
+    db.exec("CREATE TABLE IF NOT EXISTS attempts (id INTEGER PRIMARY KEY, time BIGINT, card_id INTEGER, result INT8)");
 
     SQLite::Statement fetchDecks(db, "SELECT * FROM decks");
     while(fetchDecks.executeStep())
@@ -57,7 +58,10 @@ const QVector<CardRecord>& SQLPersistence::getCardsOfDeck(RowId deckId) const
 RowId SQLPersistence::insertWord(QLocale::Language language, const QString& word)
 {
     QByteArray wordUtf8 = word.toUtf8();
+
     SQLite::Statement selectStatement(db, "SELECT id FROM words WHERE language_id = ? AND word = ?");
+    selectStatement.bind(1, language);
+    selectStatement.bind(2, wordUtf8.constData());
     if(selectStatement.executeStep())
     {
         RowId wordId = selectStatement.getColumn(0);
@@ -78,6 +82,8 @@ RowId SQLPersistence::insertWord(QLocale::Language language, const QString& word
 RowId SQLPersistence::insertSynonym(RowId wordId, RowId synonymWordId)
 {
     SQLite::Statement selectStatement(db, "SELECT id FROM synonyms WHERE word_id = ? AND synonym_word_id = ?");
+    selectStatement.bind(1, wordId);
+    selectStatement.bind(2, synonymWordId);
     if(selectStatement.executeStep())
     {
         RowId synonymId = selectStatement.getColumn(0);
@@ -95,6 +101,34 @@ RowId SQLPersistence::insertSynonym(RowId wordId, RowId synonymWordId)
     return db.getLastInsertRowid();
 }
 
+RowId SQLPersistence::insertCard(RowId deckId, RowId sourceWordId, RowId targetWordId)
+{
+    auto deck = decks.find(deckId);
+    if(deck == decks.end())
+        throw std::runtime_error("Tried to insert a card to a non-existing deck! (id " + std::to_string(deckId) + ")");
+
+    for(const auto& card : deck->cards)
+    {
+        if(card.sourceWordId == sourceWordId && card.targetWordId == targetWordId)
+        {
+            std::ostringstream oss;
+            oss << "Duplicate card in deck #" << deckId << " \"" << deck->name.toUtf8().toStdString() << "\"";
+            oss << " (words: #" << sourceWordId << " => #" << targetWordId << ")";
+            throw std::runtime_error(oss.str());
+        }
+    }
+
+    SQLite::Statement statement(db, "INSERT INTO cards (deck_id, source_word_id, target_word_id) VALUES (?, ?, ?)");
+    statement.bind(1, deckId);
+    statement.bind(2, sourceWordId);
+    statement.bind(3, targetWordId);
+    statement.exec();
+
+    RowId cardId = db.getLastInsertRowid();
+    decks[deckId].cards.push_back({ cardId, deckId, sourceWordId, targetWordId });
+    return cardId;
+}
+
 RowId SQLPersistence::insertDeck(const QString& name)
 {
     QByteArray nameUtf8 = name.toUtf8();
@@ -109,4 +143,14 @@ RowId SQLPersistence::insertDeck(const QString& name)
     auto id = db.getLastInsertRowid();
     decks[id] = { id, name, {} };
     return id;
+}
+
+RowId SQLPersistence::insertAttempt(qint64 time, RowId cardId, AttemptResult result)
+{
+    SQLite::Statement statement(db, "INSERT INTO attempts (time, card_id, result) VALUES (?, ?, ?)");
+    statement.bind(1, time);
+    statement.bind(2, cardId);
+    statement.bind(3, static_cast<int>(result));
+    statement.exec();
+    return db.getLastInsertRowid();
 }
