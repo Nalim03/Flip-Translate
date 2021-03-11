@@ -54,9 +54,54 @@ const QVector<CardRecord>& SQLPersistence::getCardsOfDeck(RowId deckId) const
     return deck->cards;
 }
 
+RowId SQLPersistence::insertWord(QLocale::Language language, const QString& word)
+{
+    QByteArray wordUtf8 = word.toUtf8();
+    SQLite::Statement selectStatement(db, "SELECT id FROM words WHERE language_id = ? AND word = ?");
+    if(selectStatement.executeStep())
+    {
+        RowId wordId = selectStatement.getColumn(0);
+        if(!selectStatement.executeStep())
+            return wordId;
+
+        RowId duplicateWordId = selectStatement.getColumn(0);
+        throw std::runtime_error("Duplicate word in database: " + wordUtf8.toStdString() + " (" + std::to_string(wordId) + ", " + std::to_string(duplicateWordId) + ")");
+    }
+
+    SQLite::Statement insertStatement(db, "INSERT INTO words (language_id, word) VALUES (?, ?)");
+    insertStatement.bind(1, language);
+    insertStatement.bind(2, wordUtf8.constData());
+    insertStatement.exec();
+    return db.getLastInsertRowid();
+}
+
+RowId SQLPersistence::insertSynonym(RowId wordId, RowId synonymWordId)
+{
+    SQLite::Statement selectStatement(db, "SELECT id FROM synonyms WHERE word_id = ? AND synonym_word_id = ?");
+    if(selectStatement.executeStep())
+    {
+        RowId synonymId = selectStatement.getColumn(0);
+        if(!selectStatement.executeStep())
+            return synonymId;
+
+        RowId duplicateSynonymId = selectStatement.getColumn(0);
+        throw std::runtime_error("Duplicate synonym in database: " + std::to_string(synonymId) + ", " + std::to_string(duplicateSynonymId));
+    }
+
+    SQLite::Statement insertStatement(db, "INSERT INTO synonyms (word_id, synonym_word_id) VALUES (?, ?)");
+    insertStatement.bind(1, wordId);
+    insertStatement.bind(2, synonymWordId);
+    insertStatement.exec();
+    return db.getLastInsertRowid();
+}
+
 RowId SQLPersistence::insertDeck(const QString& name)
 {
     QByteArray nameUtf8 = name.toUtf8();
+
+    if(getDeckIdByName(name).has_value())
+        throw std::runtime_error("Tried to insert deck \"" + nameUtf8.toStdString() + "\" which already exists!");
+
     SQLite::Statement statement(db, "INSERT INTO decks (name) VALUES (?)");
     statement.bind(1, nameUtf8.constData());
     statement.exec();

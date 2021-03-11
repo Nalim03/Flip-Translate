@@ -46,7 +46,7 @@ struct AttemptRecord
 {
     RowId id;
     quint64 time;
-    qint32 cardId;
+    RowId cardId;
     AttemptResult result;
 };
 
@@ -58,6 +58,9 @@ public:
     const QMap<RowId, Deck>& getDecks() const;
     const QVector<CardRecord>& getCardsOfDeck(RowId deckId) const;
     OptionalRowId getDeckIdByName(const QString& name) const;
+
+    RowId insertWord(QLocale::Language, const QString& word);
+    RowId insertSynonym(RowId wordId, RowId synonymWordId);
     RowId insertDeck(const QString& name);
 
 private:
