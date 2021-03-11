@@ -154,3 +154,19 @@ RowId SQLPersistence::insertAttempt(qint64 time, RowId cardId, AttemptResult res
     statement.exec();
     return db.getLastInsertRowid();
 }
+
+void SQLPersistence::forEachCardInDeck(RowId deckId, std::function<void(const CardRecord&)> callback) const
+{
+    auto deck = decks.constFind(deckId);
+    if(deck == decks.constEnd())
+        throw std::runtime_error("Tried to iterate through cards of a non-existing deck! (id " + std::to_string(deckId) + ")");
+
+    for(const auto& card : deck->cards)
+        callback(card);
+}
+
+void SQLPersistence::forEachDeck(std::function<void(const Deck&)> callback) const
+{
+    for(const auto& deck : decks)
+        callback(deck);
+}

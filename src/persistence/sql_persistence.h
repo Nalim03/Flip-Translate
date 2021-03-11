@@ -5,6 +5,7 @@
 #include <QLocale>
 #include <QString>
 #include <optional>
+#include <functional>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "iflip_persistence.h"
@@ -57,6 +58,9 @@ public:
     RowId insertCard(RowId deckId, RowId sourceWordId, RowId targetWordId);
     RowId insertDeck(const QString& name);
     RowId insertAttempt(qint64 time, RowId cardId, AttemptResult result);
+
+    void forEachCardInDeck(RowId deckId, std::function<void(const CardRecord&)> callback) const;
+    void forEachDeck(std::function<void(const Deck&)> callback) const;
 
 private:
     SQLite::Database db;
