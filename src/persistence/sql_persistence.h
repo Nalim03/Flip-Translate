@@ -4,23 +4,34 @@
 #include <QtGlobal>
 #include <QLocale>
 #include <QString>
+#include <optional>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "iflip_persistence.h"
 
-struct WordRecordData
+using RowId = long long;
+using OptionalRowId = std::optional<RowId>;
+
+struct WordRecord
 {
-    qint32 id;
+    RowId id;
     QLocale::Language language;
     QString word;
 };
 
-struct CardRecordData
+struct CardRecord
 {
-    qint32 id;
-    qint32 deckId;
-    qint32 sourceWordId;
-    qint32 targetWordId;
+    RowId id;
+    RowId deckId;
+    RowId sourceWordId;
+    RowId targetWordId;
+};
+
+struct Deck
+{
+    RowId id;
+    QString name;
+    QVector<CardRecord> cards;
 };
 
 enum class AttemptResult : qint8
@@ -31,9 +42,9 @@ enum class AttemptResult : qint8
     Difficult
 };
 
-struct AttemptRecordData
+struct AttemptRecord
 {
-    qint32 id;
+    RowId id;
     quint64 time;
     qint32 cardId;
     AttemptResult result;
@@ -44,8 +55,14 @@ class SQLPersistence : public IFlipPersistence
 public:
     SQLPersistence(const char* dbFilename);
 
+    const QMap<RowId, Deck>& getDecks() const;
+    const QVector<CardRecord>& getCardsOfDeck(RowId deckId) const;
+    OptionalRowId getDeckIdByName(const QString& name) const;
+    RowId insertDeck(const QString& name);
+
 private:
     SQLite::Database db;
+    QMap<RowId, Deck> decks;
 };
 
 #endif
