@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QMap>
 
 class FlipModel : public QObject {
     Q_OBJECT
@@ -144,6 +145,7 @@ signals:
     void translated(QString translatedSentence);
 
 private:
+    static const QMap<Language, QString> languageToCode;
     QString APIUrl = "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=%1&tl=%2&dt=t&q=%3";
 };
 
