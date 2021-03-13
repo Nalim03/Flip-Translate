@@ -147,6 +147,9 @@ signals:
 private:
     static const QMap<Language, QString> languageToCode;
     QString APIUrl = "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=%1&tl=%2&dt=t&q=%3";
+
+private slots:
+    void translateFinished();
 };
 
 #endif //FLIP_MODEL_H

@@ -13,9 +13,9 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
 endif()
 
-find_package(Qt6 COMPONENTS Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Widgets Network REQUIRED)
 
 file(GLOB_RECURSE SRCS "src/*.cpp" "src/*.h")
 add_executable(FlipTranslate ${SRCS})
 target_include_directories(FlipTranslate PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(FlipTranslate Qt6::Widgets)
+target_link_libraries(FlipTranslate Qt6::Widgets Qt6::Network)

@@ -1,5 +1,11 @@
 #include "flip_model.h"
 
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
 const QMap<FlipModel::Language, QString> FlipModel::languageToCode = {
     {Auto, QStringLiteral("auto")},
     {Afrikaans, QStringLiteral("af")},
@@ -130,5 +136,26 @@ const QMap<FlipModel::Language, QString> FlipModel::languageToCode = {
 };
 
 void FlipModel::translate(Language from, Language to, QString sentece) {
+    QString urlString = APIUrl.arg(languageToCode[from], languageToCode[to], sentece);
+    const QUrl url = QUrl(urlString);
 
+    QNetworkAccessManager *man = new QNetworkAccessManager;
+    QNetworkRequest request(url);
+
+    QNetworkReply* reply =  man->get(request);
+
+    connect(reply, &QNetworkReply::readyRead, this, &FlipModel::translateFinished);
+};
+
+void FlipModel::translateFinished() {
+    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+    QString replyString = reply->readAll();
+
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(replyString.toUtf8());
+    QJsonObject jsonObj = jsonResponse.object();
+    QJsonArray jsonArray = jsonObj["sentences"].toArray();
+    QString translatedWord = jsonArray[0].toObject()["trans"].toString();
+
+    translated(translatedWord);
+    qInfo() << translatedWord;
 };
