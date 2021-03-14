@@ -2,6 +2,12 @@
 #define FLIPWIDGET_H
 
 #include <QWidget>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QTextEdit>
+#include <QPushButton>
+#include <QComboBox>
+#include <QLabel>
 
 class FlipWidget : public QWidget
 {
@@ -10,6 +16,20 @@ class FlipWidget : public QWidget
 public:
     FlipWidget(QWidget *parent = 0);
 
+private:
+    QHBoxLayout *configHLayout;
+    QHBoxLayout *textHLayout;
+    QVBoxLayout *vLayout;
+    QTextEdit *input;
+    QTextEdit *output;
+    QPushButton *translate;
+    QComboBox *sourceLang;
+    QComboBox *outputLang;
+    QLabel *fromLabel;
+    QLabel *toLabel;
+
+
+    void initUI();
 };
 
 
